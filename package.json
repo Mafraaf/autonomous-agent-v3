@@ -1,0 +1,21 @@
+{
+  "name": "digimod-autonomous-agent",
+  "version": "1.0.0",
+  "description": "Autonomous AI agent with real tool execution — takes a brief, plans, executes, evaluates, loops until done.",
+  "main": "src/index.js",
+  "type": "module",
+  "bin": {
+    "agent": "./src/index.js"
+  },
+  "scripts": {
+    "start": "node src/index.js",
+    "agent": "node src/index.js",
+    "interactive": "node src/index.js --interactive"
+  },
+  "keywords": ["agent", "autonomous", "claude", "automation", "digimod"],
+  "author": "DigiMod AI",
+  "license": "MIT",
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.39.0"
+  }
+}

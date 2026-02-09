@@ -1,0 +1,22 @@
+{
+  "model": "qwen3-coder:30b",
+  "ollamaModel": "qwen3-coder:30b",
+  "claudeModel": "claude-sonnet-4-20250514",
+  "maxTokens": 16384,
+  "maxIterations": 50,
+  "sandboxMode": false,
+  "logLevel": "info",
+  "logDir": "./logs",
+  "logToFile": true,
+  "autoCommit": false,
+  "commitPrefix": "[agent]",
+  "blockedCommands": [
+    "rm -rf /",
+    "mkfs",
+    ":(){:|:&};:",
+    "dd if=/dev/zero",
+    "chmod -R 777 /"
+  ],
+  "maxFileSize": 10485760,
+  "httpTimeoutMs": 30000
+}

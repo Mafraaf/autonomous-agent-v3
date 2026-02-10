@@ -20,7 +20,7 @@ const TASK_TYPES = {
       /\bdisplay\b.*\b(file|contents?)\b/i,
       /\bwhat('?s| is) in\b.*\b(file|folder|directory)\b/i,
       /\blist\b.*\b(files?|directory|folder|dir)\b/i,
-      /\bls\b\s/i,
+      /(?<!npm\s)\bls\b\s/i,
     ],
     keywords: ['read', 'show', 'view', 'cat', 'display', 'contents', 'open', 'list', 'ls', 'dir'],
     tools: ['read_file', 'list_directory'],

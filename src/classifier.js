@@ -78,7 +78,7 @@ const TASK_TYPES = {
       /\brun\b.*\b(command|script|npm|node|python|bash|shell)\b/i,
       /\bexecute\b/i,
       /\binstall\b.*\b(package|dependency|module|npm|pip)\b/i,
-      /\bnpm\b\s+(install|run|start|test|build|init|publish|audit)/i,
+      /\bnpm\b\s+(install|run|start|test|build|init|publish|audit|update|outdated|ls|list|ci|exec|pack|version|--version|-v)/i,
       /\bpip\b\s+install/i,
       /\bgit\b\s+(clone|pull|push|commit|status|log|diff|branch|checkout)/i,
       /\bdocker\b\s+(build|run|compose|pull|push)/i,
@@ -87,8 +87,9 @@ const TASK_TYPES = {
       /\bchmod\b/i,
       /\bmkdir\b/i,
       /\bnpx\b\s/i,
+      /\b(npm|node|python|pip|git|docker)\b\s+--?version\b/i,
     ],
-    keywords: ['run', 'execute', 'install', 'npm', 'pip', 'git', 'docker', 'curl', 'bash', 'shell', 'command'],
+    keywords: ['run', 'execute', 'install', 'npm', 'node', 'python', 'pip', 'git', 'docker', 'curl', 'bash', 'shell', 'command'],
     tools: ['run_command'],
     confidence_boost: 0.2, // high boost — shell commands are very distinctive
   },
@@ -354,9 +355,10 @@ function planFromIntent(classification, input) {
   switch (intent) {
     case 'file_read': {
       const target = entities.filePaths[0] || null;
+      const targetIsFile = target && /\.\w+$/.test(target) && !/\/$/.test(target);
       const isListRequest = /\b(list|ls|dir|show)\b.*\b(files|directory|directories|folder|contents)\b/i.test(input)
         || /\b(files|directory|contents)\b.*\b(in|of|at)\b/i.test(input);
-      if (isListRequest) {
+      if (isListRequest && !targetIsFile) {
         plan.steps.push({ tool: 'list_directory', args: { path: target || '.' } });
       } else if (target) {
         plan.steps.push({ tool: 'read_file', args: { path: target } });
@@ -417,9 +419,14 @@ function planFromIntent(classification, input) {
           : `pip install ${entities.packages.join(' ')}`;
         plan.steps.push({ tool: 'run_command', args: { command: cmd } });
       }
-      // Other shell commands need model to compose
+      // Direct CLI invocation — extract the command and run it
       else {
-        plan.requiresModelForPlanning = true;
+        const cliMatch = input.match(/\b(npm|node|python|pip|npx|docker)\b\s+\S+.*/i);
+        if (cliMatch) {
+          plan.steps.push({ tool: 'run_command', args: { command: cliMatch[0].trim() } });
+        } else {
+          plan.requiresModelForPlanning = true;
+        }
       }
       break;
     }

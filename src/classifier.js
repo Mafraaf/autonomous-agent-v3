@@ -43,6 +43,18 @@ const TASK_TYPES = {
     confidence_boost: 0.1,
   },
 
+  FILE_DELETE: {
+    id: 'file_delete',
+    patterns: [
+      /\b(delete|remove|rm)\b.*\bfile\b/i,
+      /\bfile\b.*\b(delete|remove)\b/i,
+      /\b(delete|remove|rm)\b\s+\S+\.\w+/i,  // delete/remove/rm + filename
+    ],
+    keywords: ['delete file', 'remove file', 'rm'],
+    tools: ['delete_file'],
+    confidence_boost: 0.15,
+  },
+
   FILE_EDIT: {
     id: 'file_edit',
     patterns: [
@@ -243,7 +255,7 @@ function scoreTaskTypes(input) {
     }
 
     // Entity-based confidence boost
-    if (entities.filePaths.length > 0 && ['file_read', 'file_write', 'file_edit', 'code_analysis'].includes(taskType.id)) {
+    if (entities.filePaths.length > 0 && ['file_read', 'file_write', 'file_edit', 'file_delete', 'code_analysis'].includes(taskType.id)) {
       score += taskType.confidence_boost;
     }
     if (entities.urls.length > 0 && taskType.id === 'http_request') {
@@ -362,6 +374,16 @@ function planFromIntent(classification, input) {
         plan.requiresModelForPlanning = true; // need model to generate content
       } else {
         plan.requiresModelForPlanning = true; // need model for both path and content
+      }
+      break;
+    }
+
+    case 'file_delete': {
+      const target = entities.filePaths[0] || null;
+      if (target) {
+        plan.steps.push({ tool: 'delete_file', args: { path: target } });
+      } else {
+        plan.requiresModelForPlanning = true;
       }
       break;
     }

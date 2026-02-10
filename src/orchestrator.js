@@ -40,6 +40,10 @@ const VALIDATORS = {
     if (!result || result.error) return { valid: false, reason: result?.error || 'edit_failed' };
     return { valid: true };
   },
+  file_delete: (result) => {
+    if (!result || result.error) return { valid: false, reason: result?.error || 'delete_failed' };
+    return { valid: true };
+  },
   shell_command: (result) => {
     if (!result) return { valid: false, reason: 'no_result' };
     if (result.exitCode !== 0 && result.exitCode !== undefined) {
@@ -79,6 +83,10 @@ const RESPONSE_TEMPLATES = {
   file_write: {
     success: (result, plan) => `✓ File written: \`${plan.steps[0]?.args?.path || 'file'}\``,
     error: (result, plan) => `✗ Failed to write \`${plan.steps[0]?.args?.path || 'file'}\`: ${result.error || 'unknown error'}`,
+  },
+  file_delete: {
+    success: (result, plan) => `✓ File deleted: \`${plan.steps[0]?.args?.path || 'file'}\``,
+    error: (result, plan) => `✗ Failed to delete \`${plan.steps[0]?.args?.path || 'file'}\`: ${result.error || 'unknown error'}`,
   },
   shell_command: {
     success: (result, plan) => {

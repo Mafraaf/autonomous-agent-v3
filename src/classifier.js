@@ -184,10 +184,12 @@ function extractEntities(input) {
   };
 
   // Extract file paths
+  // Filter out well-known proper nouns that look like file paths (e.g. "Node.js", "Next.js", "Vue.js")
+  const knownProperNouns = /^(node\.js|next\.js|vue\.js|react\.js|angular\.js|express\.js|nuxt\.js|svelte\.js|ember\.js|backbone\.js|three\.js|d3\.js|p5\.js|electron\.js|deno\.js|bun\.js)$/i;
   const relMatches = input.match(new RegExp(FILE_PATH_PATTERN, 'g'));
   const absMatches = input.match(new RegExp(ABSOLUTE_PATH_PATTERN, 'g'));
-  if (relMatches) entities.filePaths.push(...relMatches.map(m => m.trim()));
-  if (absMatches) entities.filePaths.push(...absMatches.map(m => m.trim()));
+  if (relMatches) entities.filePaths.push(...relMatches.map(m => m.trim()).filter(m => !knownProperNouns.test(m)));
+  if (absMatches) entities.filePaths.push(...absMatches.map(m => m.trim()).filter(m => !knownProperNouns.test(m)));
 
   // Extract URLs
   const urlMatches = input.match(new RegExp(URL_PATTERN, 'g'));
@@ -340,7 +342,11 @@ function planFromIntent(classification, input) {
   switch (intent) {
     case 'file_read': {
       const target = entities.filePaths[0] || null;
-      if (target) {
+      const isListRequest = /\b(list|ls|dir|show)\b.*\b(files|directory|directories|folder|contents)\b/i.test(input)
+        || /\b(files|directory|contents)\b.*\b(in|of|at)\b/i.test(input);
+      if (isListRequest) {
+        plan.steps.push({ tool: 'list_directory', args: { path: target || '.' } });
+      } else if (target) {
         plan.steps.push({ tool: 'read_file', args: { path: target } });
       } else {
         plan.steps.push({ tool: 'list_directory', args: { path: '.' } });

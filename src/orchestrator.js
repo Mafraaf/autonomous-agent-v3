@@ -65,7 +65,15 @@ const VALIDATORS = {
 // Response templates — deterministic response generation for known outcomes
 const RESPONSE_TEMPLATES = {
   file_read: {
-    success: (result, plan) => `Contents of \`${plan.steps[0]?.args?.path || 'file'}\`:\n\n${result.content || result}`,
+    success: (result, plan) => {
+      // list_directory returns { entries: [...] } instead of { content: "..." }
+      if (result.entries) {
+        const path = plan.steps[0]?.args?.path || '.';
+        const listing = result.entries.map(e => e.type === 'dir' ? `  ${e.name}` : `  ${e.name} (${e.size} bytes)`).join('\n');
+        return `Contents of \`${path}/\`:\n\n${listing || '(empty directory)'}`;
+      }
+      return `Contents of \`${plan.steps[0]?.args?.path || 'file'}\`:\n\n${result.content || result}`;
+    },
     error: (result, plan) => `Failed to read \`${plan.steps[0]?.args?.path || 'file'}\`: ${result.error || result.reason || 'unknown error'}`,
   },
   file_write: {
@@ -84,15 +92,29 @@ const RESPONSE_TEMPLATES = {
     },
   },
   http_request: {
-    success: (result) => `HTTP ${result.status || 200} OK:\n\n${typeof result.data === 'string' ? result.data : JSON.stringify(result.data, null, 2)}`,
-    error: (result) => `HTTP request failed: ${result.status || 'error'} — ${result.error || result.statusText || 'unknown'}`,
+    success: (result) => {
+      const status = result.statusCode || result.status || 200;
+      const body = result.body || result.data;
+      let formatted = '';
+      if (typeof body === 'string') {
+        try { formatted = JSON.stringify(JSON.parse(body), null, 2); } catch { formatted = body; }
+      } else if (body) {
+        formatted = JSON.stringify(body, null, 2);
+      }
+      return `HTTP ${status} OK:\n\n${formatted || '(empty response)'}`;
+    },
+    error: (result) => `HTTP request failed: ${result.statusCode || result.status || 'error'} — ${result.error || result.statusText || 'unknown'}`,
   },
   search: {
     success: (result) => {
+      if (typeof result.matches === 'string' && result.matches.trim()) {
+        const lines = result.matches.trim().split('\n');
+        return `Found ${lines.length} match(es):\n\n${lines.map(l => `  ${l}`).join('\n')}`;
+      }
       if (Array.isArray(result.matches) && result.matches.length > 0) {
         return `Found ${result.matches.length} match(es):\n\n${result.matches.map(m => `  ${m.file}:${m.line}: ${m.text}`).join('\n')}`;
       }
-      return `Search complete: ${result.count || 0} results found.`;
+      return `Search complete: no matches found.`;
     },
     error: (result) => `Search failed: ${result.error || 'unknown error'}`,
   },
@@ -146,7 +168,7 @@ class WorkflowOrchestrator {
       this._trackIntent(classification.intent);
 
       // If classifier can't determine intent, fall back to model
-      if (classification.needsModel && classification.reason === 'no_pattern_match') {
+      if (classification.needsModel && (classification.reason === 'no_pattern_match' || classification.reason === 'low_confidence')) {
         return await this._modelFallback(input, classification, trace);
       }
 

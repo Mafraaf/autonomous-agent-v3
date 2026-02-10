@@ -88,6 +88,7 @@ const TASK_TYPES = {
       /\bmkdir\b/i,
       /\bnpx\b\s/i,
       /\b(npm|node|python|pip|npx|git|docker)\b\s+--?version\b/i,
+      /\b(node|python)\b\s+-\w/i,  // node/python with flags (-e, -c, -m, etc.)
     ],
     keywords: ['run', 'execute', 'install', 'npm', 'node', 'python', 'pip', 'git', 'docker', 'curl', 'bash', 'shell', 'command'],
     tools: ['run_command'],

@@ -183,6 +183,15 @@ class WorkflowOrchestrator {
 
       // If plan needs model (e.g., generating file content, composing commands)
       if (plan.requiresModelForPlanning) {
+        // Detect question-type inputs — these should get a text-only response,
+        // NOT model-assisted tool execution (which can create files, run commands, etc.)
+        const isQuestion = /^(what|how|why|when|where|who|which|can|could|should|would|is|are|do|does|explain|describe|tell me|help me understand)\b/i.test(input.trim())
+          || /\?\s*$/.test(input.trim());
+
+        if (isQuestion) {
+          return await this._modelFallback(input, classification, trace);
+        }
+
         if (!this.model) {
           // No model available — return what we can
           return {

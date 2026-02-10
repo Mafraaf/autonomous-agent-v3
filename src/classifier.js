@@ -87,7 +87,7 @@ const TASK_TYPES = {
       /\bchmod\b/i,
       /\bmkdir\b/i,
       /\bnpx\b\s/i,
-      /\b(npm|node|python|pip|git|docker)\b\s+--?version\b/i,
+      /\b(npm|node|python|pip|npx|git|docker)\b\s+--?version\b/i,
     ],
     keywords: ['run', 'execute', 'install', 'npm', 'node', 'python', 'pip', 'git', 'docker', 'curl', 'bash', 'shell', 'command'],
     tools: ['run_command'],
@@ -203,6 +203,19 @@ function extractEntities(input) {
   const absMatches = input.match(new RegExp(ABSOLUTE_PATH_PATTERN, 'g'));
   if (relMatches) entities.filePaths.push(...relMatches.map(m => m.trim()).filter(m => !knownProperNouns.test(m)));
   if (absMatches) entities.filePaths.push(...absMatches.map(m => m.trim()).filter(m => !knownProperNouns.test(m)));
+
+  // Known extensionless files (LICENSE, Makefile, Dockerfile, etc.)
+  const knownExtensionless = /\b(LICENSE|Makefile|Dockerfile|README|CHANGELOG|CONTRIBUTING|AUTHORS|Procfile|Vagrantfile|Gemfile|Rakefile|Brewfile|Pipfile|Taskfile|Justfile|Cakefile)\b/;
+  const extensionlessMatch = input.match(knownExtensionless);
+  if (extensionlessMatch && !entities.filePaths.includes(extensionlessMatch[1])) {
+    entities.filePaths.push(extensionlessMatch[1]);
+  }
+
+  // Dotfiles (.gitignore, .env, .dockerignore, .eslintrc, etc.)
+  const dotfileMatch = input.match(/(?:^|\s)(\.[\w][\w.-]*)(?:\s|$)/);
+  if (dotfileMatch && !entities.filePaths.includes(dotfileMatch[1])) {
+    entities.filePaths.push(dotfileMatch[1]);
+  }
 
   // Extract URLs
   const urlMatches = input.match(new RegExp(URL_PATTERN, 'g'));

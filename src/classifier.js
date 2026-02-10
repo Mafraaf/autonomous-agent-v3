@@ -80,7 +80,7 @@ const TASK_TYPES = {
       /\binstall\b.*\b(package|dependency|module|npm|pip)\b/i,
       /\bnpm\b\s+(install|run|start|test|build|init|publish|audit|update|outdated|ls|list|ci|exec|pack|version|--version|-v)/i,
       /\bpip\b\s+install/i,
-      /\bgit\b\s+(clone|pull|push|commit|status|log|diff|branch|checkout)/i,
+      /\bgit\b\s+(clone|pull|push|commit|status|log|diff|branch|checkout|remote|fetch|reset|show|init|add|clean|rm)/i,
       /\bdocker\b\s+(build|run|compose|pull|push)/i,
       /\bcurl\b\s/i,
       /\bwget\b\s/i,
@@ -229,7 +229,7 @@ function extractEntities(input) {
   if (pipMatch) entities.packages.push(...pipMatch[1].split(/\s+/));
 
   // Extract git operations
-  const gitMatch = input.match(/git\s+(clone|pull|push|commit|status|log|diff|branch|checkout|merge|rebase|stash|tag)(?:\s+(.+?))?(?:\s*$)/i);
+  const gitMatch = input.match(/git\s+(clone|pull|push|commit|status|log|diff|branch|checkout|merge|rebase|stash|tag|remote|fetch|reset|show|init|add|clean|rm)(?:\s+(.+?))?(?:\s*$)/i);
   if (gitMatch) {
     entities.gitOps.push({
       operation: gitMatch[1].toLowerCase(),
